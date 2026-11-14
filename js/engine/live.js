@@ -1,10 +1,15 @@
 // live.js — talk to a real TensorFold server from the lab.
 //
 // The engine sends no CORS headers, so every call goes through serve.py's
-// same-origin proxy at /engine/… (see serve.py). If no engine is running the
+// same-origin proxy at engine/… (see serve.py). If no engine is running the
 // proxy answers 503 with a JSON error rather than hanging.
+//
+// The path is RELATIVE on purpose: the site also publishes to a subpath
+// (e.g. /aiforall/ on GitHub Pages), where an absolute '/engine' would escape
+// the site root. There is no proxy on a static host, so these lessons simply
+// report "no engine" — which is what they are written to do.
 
-const BASE = '/engine/v1';
+const BASE = new URL('engine/v1', document.baseURI).pathname;
 
 async function call(path, body) {
   const res = await fetch(BASE + path, body
