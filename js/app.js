@@ -26,7 +26,10 @@ const setNav = (collapsed) => {
   document.body.classList.toggle('nav-collapsed', collapsed);
   localStorage.setItem('aiforall.nav', collapsed ? 'collapsed' : 'open');
 };
-setNav(localStorage.getItem('aiforall.nav') === 'collapsed');
+// No stored preference: start collapsed on narrow screens, where the full list
+// would push the lesson itself below the fold.
+const storedNav = localStorage.getItem('aiforall.nav');
+setNav(storedNav ? storedNav === 'collapsed' : window.innerWidth <= 860);
 document.getElementById('navclose').addEventListener('click', () => setNav(true));
 document.getElementById('navopen').addEventListener('click', () => setNav(false));
 // Esc toggles it too, so the keyboard works without hunting for the button.

@@ -221,7 +221,18 @@ pre.code .cm { color: var(--muted); }
 .badge.err { color: var(--err); border-color: var(--err); }
 
 @media (max-width: 860px) {
-  body { grid-template-columns: 1fr; }
-  #sidebar { height: auto; position: static; }
-  #main { padding: 22px 18px 60px; }
+  /* Stop being a grid: `html, body { height: 100% }` pins the grid container to
+     the viewport, which squashes the two auto rows instead of letting the page
+     scroll. Plain block flow is what a narrow screen wants anyway. */
+  html, body { height: auto; }
+  body { display: block; }
+  #sidebar {
+    height: auto;
+    position: static;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  #main { padding: 22px 18px 60px; max-width: 100%; }
+  body.nav-collapsed #main { padding-left: 18px; padding-top: 58px; }
 }
