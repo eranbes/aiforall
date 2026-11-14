@@ -1,0 +1,11 @@
+# The reference engine is cloned locally, never vendored here.
+# See README: git clone https://github.com/ashhart/TensorFold
+TensorFold/
+
+# local toolchains and build output
+zig-out/
+.zig-cache/
+__pycache__/
+*.pyc
+
+.DS_Store
