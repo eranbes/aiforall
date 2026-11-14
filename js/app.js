@@ -21,6 +21,19 @@ document.getElementById('theme').addEventListener('click', () => {
   refreshTheme();
 });
 
+/* ---------- sidebar collapse ---------- */
+const setNav = (collapsed) => {
+  document.body.classList.toggle('nav-collapsed', collapsed);
+  localStorage.setItem('aiforall.nav', collapsed ? 'collapsed' : 'open');
+};
+setNav(localStorage.getItem('aiforall.nav') === 'collapsed');
+document.getElementById('navclose').addEventListener('click', () => setNav(true));
+document.getElementById('navopen').addEventListener('click', () => setNav(false));
+// Esc toggles it too, so the keyboard works without hunting for the button.
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') setNav(!document.body.classList.contains('nav-collapsed'));
+});
+
 /* ---------- nav ---------- */
 let lastGroup = null;
 for (const l of LESSONS) {
