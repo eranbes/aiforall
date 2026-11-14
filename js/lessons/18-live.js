@@ -2,7 +2,7 @@
 
 import { Plot, color } from '../plot.js';
 import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, textbox, fmt } from '../ui.js';
-import { probe, capabilities, sampleOnce, measureDistribution, stream } from '../engine/live.js';
+import { probe, capabilities, sampleOnce, measureDistribution, stream, HOSTED } from '../engine/live.js';
 import { sample, entropy, perplexity } from '../engine/sample.js';
 import { NGram, tokenize } from '../engine/ngram.js';
 import { DEFAULT_CORPUS } from '../engine/corpus.js';
@@ -41,6 +41,16 @@ export default {
           class: 'tok',
           style: { borderColor: v ? 'var(--ok)' : 'var(--border)', opacity: v ? '1' : '0.5' },
         }, `${k}: ${v}`)));
+      } else if (HOSTED) {
+        // Static host: there is no proxy and never will be. Say so plainly
+        // rather than naming a port the reader never started.
+        statusLine.className = 'note';
+        statusLine.innerHTML = `<b>You are reading the published copy, so there is no engine behind this page.</b>
+          <br><span style="color:var(--muted)">A static host serves files; it cannot run a 2-billion-parameter
+          model for every visitor. Lessons 01–17 are complete here — they compute everything in this tab.
+          This lesson and the four after it <i>measure</i> a real server, so they need the lab on your own
+          machine. The commands below are the whole recipe.</span>`;
+        capLine.replaceChildren();
       } else {
         statusLine.className = 'note err';
         statusLine.innerHTML = `<b>no engine on 127.0.0.1:8080.</b>
@@ -65,6 +75,22 @@ export default {
       renderStatus();
     };
 
+    // The recipe sits below the two columns, at full card width: these are long
+    // shell lines and a narrow column wraps them mid-URL.
+    const recipe = el('pre', { class: 'code', html:
+      `<span class="cm"># 1. the lab you are reading, served locally</span>\n` +
+      `git clone https://github.com/eranbes/aiforall &amp;&amp; cd aiforall\n` +
+      `./serve.py 8777\n\n` +
+      `<span class="cm"># 2. the engine: Zig pinned by .zig-version, plus Xcode's Metal compiler</span>\n` +
+      `git clone https://github.com/ashhart/TensorFold\n` +
+      `xcodebuild -downloadComponent MetalToolchain\n` +
+      `cd TensorFold &amp;&amp; zig build native -Doptimize=ReleaseFast\n\n` +
+      `<span class="cm"># 3. weights, then serve them on :8080</span>\n` +
+      `./zig-out/native/bin/tensorfold-native pull mlx-community/Qwen3.5-2B-MLX-4bit\n` +
+      `./zig-out/native/bin/tensorfold-native serve mlx-community/Qwen3.5-2B-MLX-4bit \\\n` +
+      `    --name local-model --context 8192 --no-thinking\n\n` +
+      `<span class="cm"># then open http://127.0.0.1:8777/#/18-live and press connect</span>` });
+
     root.append(card('Is anything listening?',
       'The lab is a static page; the engine is a separate native process built from the Zig source this course has been reading.',
       row(
@@ -72,15 +98,7 @@ export default {
           el('div', { style: { height: '10px' } }),
           capLine,
           el('div', { style: { height: '10px' } }),
-          btns(connBtn),
-          el('div', { style: { height: '10px' } }),
-          el('pre', { class: 'code', html:
-            `<span class="cm"># Zig pinned by .zig-version, plus Xcode's Metal compiler</span>\n` +
-            `xcodebuild -downloadComponent MetalToolchain\n` +
-            `cd TensorFold &amp;&amp; zig build native -Doptimize=ReleaseFast\n\n` +
-            `./zig-out/native/bin/tensorfold-native pull mlx-community/Qwen3.5-2B-MLX-4bit\n` +
-            `./zig-out/native/bin/tensorfold-native serve mlx-community/Qwen3.5-2B-MLX-4bit \\\n` +
-            `    --name local-model --context 8192 --no-thinking` })),
+          btns(connBtn)),
         el('div', { class: 'col', style: { flex: '1 1 300px' } },
           note(`<b>What the checkpoint reports.</b> <code class="inline">tensorfold-native info</code> on these
                 weights prints <i>“format: 4-bit, group 64”</i> and <i>“memory floor: 3.63 GiB (weights plus a
@@ -88,7 +106,9 @@ export default {
                 formula, printed by the engine itself.`),
           note(`<b>Why a proxy.</b> A page on :8777 may not call :8080 unless the engine allows the origin.
                 Rather than require a particular launch flag, <code class="inline">serve.py</code> forwards
-                <code class="inline">/engine/*</code> from the same origin. The engine is never modified.`)))));
+                <code class="inline">/engine/*</code> from the same origin. The engine is never modified.`))),
+      el('div', { style: { height: '12px' } }),
+      recipe));
 
     /* ---------------- measure the distribution ---------------- */
     const dist = new Plot({

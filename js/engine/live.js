@@ -11,6 +11,14 @@
 
 const BASE = new URL('engine/v1', document.baseURI).pathname;
 
+/**
+ * True when this page is served from somewhere that cannot have an engine
+ * behind it — GitHub Pages and friends are static file hosts, so there is no
+ * proxy and nothing is listening. Lessons use this to explain the situation
+ * instead of blaming a port the reader never started.
+ */
+export const HOSTED = !['127.0.0.1', 'localhost', '[::1]', ''].includes(location.hostname);
+
 async function call(path, body) {
   const res = await fetch(BASE + path, body
     ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }

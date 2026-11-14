@@ -3,7 +3,7 @@
 
 import { Plot, color } from '../plot.js';
 import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, textbox, checkbox, fmt } from '../ui.js';
-import { probe, tokenize, pieces } from '../engine/live.js';
+import { probe, tokenize, pieces, HOSTED } from '../engine/live.js';
 import { sample, applyPenalties } from '../engine/sample.js';
 import { NGram, tokenize as words } from '../engine/ngram.js';
 import { DEFAULT_CORPUS } from '../engine/corpus.js';
@@ -75,7 +75,9 @@ export default {
       const r = await probe();
       T.connected = r.ok;
       if (r.ok && r.models.length) T.model = r.models[0].id;
-      tokErr.textContent = r.ok ? '' : 'no engine on :8080 — this card needs the live server from lesson 18.';
+      tokErr.textContent = r.ok ? '' : (HOSTED
+        ? 'No engine behind the published copy — a static host cannot run a model. Lesson 18 has the three commands that bring one up locally.'
+        : 'no engine on :8080 — this card needs the live server from lesson 18.');
       if (r.ok) render();
     };
 
