@@ -11,8 +11,12 @@ every number on every page is computed in your tab, just now.
 
 ## Start here
 
-**→ [The whole thing in ten minutes](#/00b-tour)** — five ideas, five buttons. If you read nothing
-else, read that. It is not a simplification that gets replaced later; it is what the rest is made of.
+### → **[Take the 10-minute tour](https://eranbes.github.io/aiforall/#/00b-tour)**
+
+Five ideas, five buttons. If you read nothing else, read that. It is not a simplification that gets
+replaced later; it is what the rest is made of.
+
+Live site: **https://eranbes.github.io/aiforall/**
 
 Then follow only what you are curious about. Lessons **01–11** are the course proper; 12–22 are
 reference depth for when a question sends you looking.
