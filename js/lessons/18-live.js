@@ -47,7 +47,8 @@ export default {
         statusLine.className = 'note';
         statusLine.innerHTML = `<b>You are reading the published copy, so there is no engine behind this page.</b>
           <br><span style="color:var(--muted)">A static host serves files; it cannot run a 2-billion-parameter
-          model for every visitor. Lessons 01–17 are complete here — they compute everything in this tab.
+          model for every visitor. <a class="xref" href="#/01-sampling">Lessons 01</a>–<a class="xref"
+          href="#/17-deltanet">17</a> are complete here — they compute everything in this tab.
           This lesson and the four after it <i>measure</i> a real server, so they need the lab on your own
           machine. The commands below are the whole recipe.</span>`;
         capLine.replaceChildren();
