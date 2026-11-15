@@ -2,7 +2,7 @@
 // If someone only ever reads one lesson, it should be this one.
 
 import { Plot, color } from '../plot.js';
-import { card, el, prose, note, btns, button, row, grow, slider, stats, fmt } from '../ui.js';
+import { card, el, prose, note, btns, button, row, grow, slider, stats, fmt, presets } from '../ui.js';
 import { NGram, tokenize, detokenize } from '../engine/ngram.js';
 import { DEFAULT_CORPUS } from '../engine/corpus.js';
 import { sample } from '../engine/sample.js';
@@ -113,10 +113,11 @@ export default {
       beat(3, 'It does not see letters or words. It sees <b>numbered pieces</b>.'),
       chips,
       el('div', { style: { height: '10px' } }),
-      btns(
-        button('a sentence', () => renderChips('The engine reads the weights.'), { ghost: true }),
-        button('a long word', () => renderChips('unbelievably complicated'), { ghost: true }),
-        button('emoji', () => renderChips('hello 🌍 ok'), { ghost: true })),
+      presets([
+        { label: 'a sentence', value: 'The engine reads the weights.' },
+        { label: 'a long word', value: 'unbelievably complicated' },
+        { label: 'emoji', value: 'hello 🌍 ok' },
+      ].map((p) => ({ ...p, onPick: (v) => renderChips(v) })), 'The engine reads the weights.'),
       el('div', { style: { height: '10px' } }),
       prose(`<p>Each coloured chip is one piece, and each piece is really just a number — an entry in a
         list of about 250,000. "The" might be 1,109. A long or unusual word gets chopped into several

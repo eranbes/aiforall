@@ -1,7 +1,7 @@
 // 16-qwen-anatomy.js — what a real model implementation actually contains.
 
 import { Plot, color, mix } from '../plot.js';
-import { card, el, prose, note, row, grow, btns, button, stats, legend, fmt } from '../ui.js';
+import { card, el, prose, note, row, grow, btns, button, stats, legend, fmt, presets } from '../ui.js';
 
 /* Measured from the repo, not estimated:
    find zig/src/families/qwen3_5 -name '*.zig' | xargs wc -l   →  28,711 lines, 179 files
@@ -175,8 +175,8 @@ export default {
       'Eighteen Metal files. Seven of them are the same quantised matmul compiled for one specific matrix shape — and the shapes <i>are</i> the model.',
       row(
         grow(
-          btns(...[['all', 'all 18'], ['attn', 'attention'], ['gdn', 'delta-net'], ['mlp', 'MLP'], ['norm', 'norms'], ['out', 'output']]
-            .map(([k, t]) => button(t, () => { kfilter = k; renderKernels(); }, { ghost: kfilter !== k }))),
+          presets([['all', 'all 18'], ['attn', 'attention'], ['gdn', 'delta-net'], ['mlp', 'MLP'], ['norm', 'norms'], ['out', 'output']]
+            .map(([k, t]) => ({ label: t, value: k, onPick: () => { kfilter = k; renderKernels(); } })), kfilter),
           el('div', { style: { height: '10px' } }),
           kernelBox),
         el('div', { class: 'col', style: { flex: '1 1 320px' } },

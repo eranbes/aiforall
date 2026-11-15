@@ -1,7 +1,7 @@
 // 02-tokens.js — level 9: text is not characters, it is tokens.
 
 import { Plot, color } from '../plot.js';
-import { card, el, prose, note, btns, button, row, grow, slider, stats, textbox, legend, fmt } from '../ui.js';
+import { card, el, prose, note, btns, button, row, grow, slider, stats, textbox, legend, fmt, presets } from '../ui.js';
 import { BPE, display, pretokenize, toByteString, fromByteString } from '../engine/bpe.js';
 import { DEFAULT_CORPUS } from '../engine/corpus.js';
 
@@ -87,10 +87,13 @@ export default {
 
     const rt = el('span', { class: 'badge' });
 
+    // Declared before the preset row so onInput can clear the highlight: once
+    // you type, no preset is selected any more and saying otherwise would lie.
+    let presetRow = null;
     const input = textbox({
       label: 'your text — anything, any language, any emoji',
       rows: 3, value: SAMPLE,
-      onInput: (v) => { state.text = v; renderTokens(); },
+      onInput: (v) => { state.text = v; renderTokens(); if (presetRow) presetRow.select(null); },
     });
 
     const vocabS = slider({
@@ -106,11 +109,12 @@ export default {
           el('div', { style: { height: '12px' } }),
           chips,
           el('div', { style: { height: '12px' } }),
-          btns(
-            button('a sentence', () => { input.set(SAMPLE); state.text = SAMPLE; renderTokens(); }, { ghost: true }),
-            button('emoji + 日本語', () => { const t = 'héllo 🌍 日本語 — ok?'; input.set(t); state.text = t; renderTokens(); }, { ghost: true }),
-            button('numbers', () => { const t = '3.14159 and 2026 and 1000000'; input.set(t); state.text = t; renderTokens(); }, { ghost: true }),
-            button('nonsense', () => { const t = 'zzqqxj Xyzzy-- \t\u0000\u00ff'; input.set(t); state.text = t; renderTokens(); }, { ghost: true }))),
+          (presetRow = presets([
+            { label: 'a sentence', value: SAMPLE },
+            { label: 'emoji + 日本語', value: 'héllo 🌍 日本語 — ok?' },
+            { label: 'numbers', value: '3.14159 and 2026 and 1000000' },
+            { label: 'nonsense', value: 'zzqqxj Xyzzy-- \t\u0000\u00ff' },
+          ].map((p) => ({ ...p, onPick: (v) => { input.set(v); state.text = v; renderTokens(); presetRow.select(v); } })), SAMPLE))),
         el('div', { class: 'col', style: { flex: '0 1 300px' } },
           vocabS, tokStats, rt,
           note(`Nothing is ever "out of vocabulary". Worst case a character falls back to its raw

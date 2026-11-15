@@ -214,6 +214,14 @@ button:hover { filter: brightness(1.1); }
 button.ghost {
   background: var(--surface-2); color: var(--fg); border: 1px solid var(--border); font-weight: 500;
 }
+/* the selected preset: an outlined chip, distinct from an action button */
+button.on {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  font-weight: 600;
+}
+button.on::before { content: "● "; font-size: 10px; vertical-align: 1px; }
 button:disabled { opacity: .45; cursor: not-allowed; }
 select, input[type=text], textarea {
   font: inherit; font-size: 13px; background: var(--surface-2); color: var(--fg);
