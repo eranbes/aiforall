@@ -101,6 +101,28 @@ body.nav-collapsed #main { padding-left: 58px; }
 }
 .card.hero > h3 { font-size: 20px; letter-spacing: -0.3px; }
 .card.hero > h3::before { content: "▶ "; color: var(--accent); }
+
+/* a guide row that scrolls to the card it names */
+.jump {
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 8px 11px; border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color .12s, background .12s;
+}
+.jump:hover, .jump:focus-visible { border-color: var(--accent); outline: none; }
+.jump .n { font: 11px var(--mono); color: var(--accent); font-weight: 700; min-width: 16px; }
+.jump .go { margin-left: auto; color: var(--muted); font-size: 13px; opacity: 0; transition: opacity .12s; }
+.jump:hover .go, .jump:focus-visible .go { opacity: 1; }
+
+/* brief ring on the card you were sent to, so the jump is legible */
+@keyframes cardflash {
+  from { box-shadow: 0 0 0 3px var(--accent); }
+  to   { box-shadow: 0 0 0 3px transparent; }
+}
+.card.flash { animation: cardflash 1.1s ease-out; }
+@media (prefers-reduced-motion: reduce) { .card.flash { animation: none; } }
 #sidebar .spacer { flex: 1; }
 #nav { display: flex; flex-direction: column; gap: 2px; }
 #nav .group { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); margin: 14px 0 4px 8px; }
@@ -139,7 +161,16 @@ body.nav-collapsed #main { padding-left: 58px; }
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px 18px;
+  scroll-margin-top: 16px; /* a jumped-to card should not touch the top edge */
 }
+
+/* an inline "lesson 13" that goes there */
+a.xref {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in srgb, var(--accent) 55%, transparent);
+}
+a.xref:hover { border-bottom-style: solid; }
 .card > h3 { margin: 0 0 4px; font-size: 15px; letter-spacing: -0.2px; }
 .card > .sub { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
 .row { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
