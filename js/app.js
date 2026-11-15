@@ -49,6 +49,69 @@ for (const l of LESSONS) {
     el('span', { text: l.title })));
 }
 
+/* ---------- cross-references ---------- */
+// Prose numbers its siblings in three shapes: "lesson 13", "lessons 12–22" and
+// "lessons 05, 06, 17". Rather than hand-write anchors in ~50 places, rewrite
+// the text nodes after each render. Each number becomes its own link.
+const BY_NUM = new Map(LESSONS.map((l) => [String(l.num).padStart(2, '0'), l]));
+// the whole phrase, including any trailing range/list of further numbers
+const MENTION = /\blessons?\s+\d{2}(?:\s*(?:[–—-]|,\s*(?:and\s+)?)\s*\d{2})*/gi;
+const NUM = /\d{2}/g;
+const SKIP = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'TEXTAREA', 'BUTTON', 'CANVAS']);
+
+/** Split one matched phrase into links for each number, plain text between. */
+function renderMention(phrase, selfId) {
+  const parts = [];
+  let cut = 0;
+  let linked = false;
+  NUM.lastIndex = 0;
+  for (let m; (m = NUM.exec(phrase));) {
+    const lesson = BY_NUM.get(m[0]);
+    if (!lesson || lesson.id === selfId) continue; // never link a page to itself
+    // A lone "lesson 13" reads better as one link, word included.
+    const start = linked ? m.index : 0;
+    if (start > cut) parts.push(phrase.slice(cut, start));
+    parts.push(el('a', { class: 'xref', href: '#/' + lesson.id, title: lesson.title },
+      phrase.slice(start, m.index + m[0].length)));
+    cut = m.index + m[0].length;
+    linked = true;
+  }
+  if (!linked) return null;
+  if (cut < phrase.length) parts.push(phrase.slice(cut));
+  return parts;
+}
+
+function linkLessonMentions(scope, selfId) {
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      MENTION.lastIndex = 0;
+      if (!MENTION.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
+      for (let p = n.parentElement; p && p !== scope; p = p.parentElement) {
+        if (SKIP.has(p.tagName)) return NodeFilter.FILTER_REJECT;
+      }
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const targets = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) targets.push(n);
+
+  for (const node of targets) {
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    MENTION.lastIndex = 0;
+    for (let m; (m = MENTION.exec(node.nodeValue));) {
+      const parts = renderMention(m[0], selfId);
+      if (!parts) continue;
+      if (m.index > last) frag.append(node.nodeValue.slice(last, m.index));
+      frag.append(...parts);
+      last = m.index + m[0].length;
+    }
+    if (!last) continue;
+    frag.append(node.nodeValue.slice(last));
+    node.replaceWith(frag);
+  }
+}
+
 /* ---------- routing ---------- */
 let cleanup = null;
 
@@ -74,6 +137,9 @@ function show(id) {
       el('pre', { class: 'code', text: String(err && err.stack || err) })));
     console.error(err);
   }
+
+  // Prose says "lesson 13" in 48 places; make every one of them clickable.
+  linkLessonMentions(rootEl, lesson.id);
 
   // prev / next
   pagerEl.replaceChildren();

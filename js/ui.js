@@ -26,9 +26,27 @@ export const note = (html) => el('div', { class: 'note', html });
 export const eq = (html) => el('div', { class: 'eq', html });
 export const code = (text) => el('pre', { class: 'code', html: text });
 
+/** Stable element id for a card, derived from its title. */
+export const cardId = (title) =>
+  'card-' + String(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/**
+ * Scroll a card into view and flash it, without touching location.hash —
+ * the router owns the hash, so a real <a href="#…"> would navigate away.
+ */
+export function jumpToCard(title) {
+  const target = document.getElementById(cardId(title));
+  if (!target) return false;
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  target.classList.remove('flash');
+  void target.offsetWidth; // restart the animation if it is already running
+  target.classList.add('flash');
+  return true;
+}
+
 export function card(title, sub, ...kids) {
   const c = el('div', { class: 'card' });
-  if (title) c.append(el('h3', { text: title }));
+  if (title) { c.id = cardId(title); c.append(el('h3', { text: title })); }
   if (sub) c.append(el('p', { class: 'sub', html: sub }));
   c.append(...kids.flat(9).filter(Boolean));
   return c;

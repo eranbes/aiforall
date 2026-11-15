@@ -1,7 +1,7 @@
 // 01-sampling.js — levels 11, 10 and 8: the decode loop and the sampler.
 
 import { Plot, color } from '../plot.js';
-import { card, el, prose, note, btns, button, row, grow, slider, checkbox, stats, legend, loop, textbox, fmt } from '../ui.js';
+import { card, el, prose, note, btns, button, row, grow, slider, checkbox, stats, legend, loop, textbox, fmt, jumpToCard } from '../ui.js';
 import { NGram, tokenize, detokenize } from '../engine/ngram.js';
 import { DEFAULT_CORPUS } from '../engine/corpus.js';
 import { sample, entropy, perplexity, keyedUniform } from '../engine/sample.js';
@@ -265,22 +265,25 @@ export default {
       el('div', { class: 'col', style: { gap: '8px' } },
         ...[
           ['Prefill, then the decode loop', 'Press <b>step ▸</b> five times.', 'The amber text was already there — that is the prompt, prefilled in one pass. Each press adds one blue word and costs one more pass.'],
-          ['Before the loop', 'Just look at the two rows of boxes.', 'Your prompt costs one pass; each reply word costs a whole pass of its own.'],
+          ['Before the loop: your prompt', 'Just look at the two rows of boxes.', 'Your prompt costs one pass; each reply word costs a whole pass of its own.'],
           ['The sampler', 'Drag <b>temperature</b> to 0, press step a few times. Then to 1.8, step again.', 'At 0 it repeats itself; at 1.8 it rambles. The coloured bars are the words it was choosing between.'],
           ['The draw is not a die roll', 'Press <b>step</b> and watch the tall blue line.', 'The winner is not always the most likely word — noise is added to each candidate first.'],
           ['What temperature actually does', 'Read the three short paragraphs.', 'Now the maths behind what you just felt. Skip if you are satisfied.'],
           ['In the real engine', 'Skim it.', 'The same knobs on a production server, with the source they come from.'],
           ['The model behind the numbers', 'Edit the text box, press <b>retrain</b>.', 'The predictions come from that text and nothing else. Change it and the model changes.'],
         ].map(([where, action, why], i) => el('div', {
-          style: {
-            display: 'flex', gap: '12px', alignItems: 'baseline',
-            padding: '8px 11px', borderRadius: '8px', background: 'var(--surface-2)',
-          },
+          class: 'jump',
+          role: 'button',
+          tabindex: '0',
+          title: `go to “${where}”`,
+          onclick: () => jumpToCard(where),
+          onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); jumpToCard(where); } },
         },
-          el('span', { style: { font: '11px ui-monospace,Menlo,monospace', color: 'var(--accent)', fontWeight: '700', minWidth: '16px' }, text: String(i + 1) }),
+          el('span', { class: 'n', text: String(i + 1) }),
           el('div', {},
             el('div', { style: { fontSize: '13.5px' }, html: `<b>${where}</b> — ${action}` }),
-            el('div', { style: { fontSize: '12.5px', color: 'var(--muted)', marginTop: '1px' }, text: why }))))));
+            el('div', { style: { fontSize: '12.5px', color: 'var(--muted)', marginTop: '1px' }, text: why })),
+          el('span', { class: 'go', text: '↓' })))));
     guide.classList.add('hero');
     root.append(guide);
 
