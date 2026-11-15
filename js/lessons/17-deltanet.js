@@ -1,7 +1,7 @@
 // 17-deltanet.js — the 18 layers of Qwen3.5-2B that are not attention.
 
 import { Plot, color, div, seq } from '../plot.js';
-import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, fmt } from '../ui.js';
+import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, fmt, presets } from '../ui.js';
 import { mulberry32, cosine } from '../engine/tensor.js';
 
 const DK = 8, DV = 8;          // toy widths; the real ones are 128 × 128
@@ -139,7 +139,7 @@ export default {
           el('div', { class: 'sub', style: { margin: '6px 0 2px' }, text: 'write a pair' }),
           btns(...PAIRS.map((p) => button(p.name, () => write(p), { ghost: true }))),
           el('div', { class: 'sub', style: { margin: '6px 0 2px' }, text: 'read with' }),
-          btns(...PAIRS.map((p, i) => button(p.name, () => { S.query = i; refresh(); }, { ghost: S.query !== i }))),
+          presets(PAIRS.map((p, i) => ({ label: p.name, value: i, onPick: () => { S.query = i; refresh(); } })), S.query),
           slider({ label: 'g — decay (forget gate)', min: 0.6, max: 1, step: 0.005, value: 0.98, fmt: (v) => v.toFixed(3), onInput: (v) => { S.g = v; refresh(); } }),
           slider({ label: 'β — write strength', min: 0.05, max: 1, step: 0.05, value: 1, fmt: (v) => v.toFixed(2), onInput: (v) => { S.beta = v; refresh(); } }),
           btns(button('reset memory', reset, { ghost: true }))))));

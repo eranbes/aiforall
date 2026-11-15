@@ -1,7 +1,7 @@
 // 18-live.js — the whole course, checked against a real engine on this machine.
 
 import { Plot, color } from '../plot.js';
-import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, textbox, fmt } from '../ui.js';
+import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, textbox, fmt, presets } from '../ui.js';
 import { probe, capabilities, sampleOnce, measureDistribution, stream, HOSTED } from '../engine/live.js';
 import { sample, entropy, perplexity } from '../engine/sample.js';
 import { NGram, tokenize } from '../engine/ngram.js';
@@ -175,9 +175,10 @@ export default {
       dist.render();
     };
 
+    let promptPresets = null;
     const promptBox = textbox({
       label: 'prompt', rows: 2, value: S.prompt,
-      onInput: (v) => { S.prompt = v; },
+      onInput: (v) => { S.prompt = v; if (promptPresets) promptPresets.select(null); },
     });
 
     root.append(card('The distribution, recovered by sampling',
@@ -187,10 +188,12 @@ export default {
           el('div', { style: { height: '10px' } }),
           promptBox,
           el('div', { style: { height: '8px' } }),
-          btns(
-            button('measure ▸', measure),
-            button('"2 + 2 ="', () => { promptBox.set('2 + 2 ='); S.prompt = '2 + 2 ='; measure(); }, { ghost: true }),
-            button('open-ended', () => { const t = 'Write one word:'; promptBox.set(t); S.prompt = t; measure(); }, { ghost: true }))),
+          btns(button('measure ▸', measure)),
+          el('div', { style: { height: '8px' } }),
+          (promptPresets = presets([
+            { label: '"2 + 2 ="', value: '2 + 2 =' },
+            { label: 'open-ended', value: 'Write one word:' },
+          ].map((p) => ({ ...p, onPick: (v) => { promptBox.set(v); S.prompt = v; promptPresets.select(v); measure(); } })), S.prompt))),
         el('div', { class: 'col', style: { flex: '0 1 300px' } },
           read,
           slider({ label: 'temperature <span class="badge">request field</span>', min: 0, max: 2, step: 0.05, value: 1.2, fmt: (v) => (v === 0 ? '0 (greedy)' : v.toFixed(2)), onInput: (v) => { S.temperature = v; } }),

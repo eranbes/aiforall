@@ -1,7 +1,7 @@
 // 15-streaming.js — the last mile: turning committed token ids into bytes on a socket.
 
 import { Plot, color } from '../plot.js';
-import { card, el, prose, note, btns, button, row, grow, slider, stats, textbox, legend, loop, fmt, checkbox } from '../ui.js';
+import { card, el, prose, note, btns, button, row, grow, slider, stats, textbox, legend, loop, fmt, checkbox, presets } from '../ui.js';
 import { BPE, display, fromByteString } from '../engine/bpe.js';
 import { DEFAULT_CORPUS } from '../engine/corpus.js';
 
@@ -55,6 +55,11 @@ export default {
     /* a byte-level tokenizer with few merges, so multi-byte characters split across tokens */
     const bpe = new BPE();
     bpe.train(DEFAULT_CORPUS, 120);
+
+    // Forward refs: the textbox clears the preset highlight, and the presets
+    // write back into the textbox, so each needs the other.
+    let streamBox = null;
+    let presetRow = null;
 
     const state = {
       text: 'ok 🌍 日本語 done',
@@ -149,10 +154,10 @@ export default {
       'Press <b>next token</b>. The red pane decodes each token on its own; the green pane uses the engine\'s algorithm. Red chips are single raw bytes — a character that needs several of them.',
       row(
         grow(
-          textbox({
+          (streamBox = textbox({
             label: 'text the model is "generating"', rows: 1, value: state.text,
-            onInput: (v) => { state.text = v; reset(); },
-          }),
+            onInput: (v) => { state.text = v; reset(); if (presetRow) presetRow.select(null); },
+          })),
           el('div', { style: { height: '10px' } }),
           tokStrip,
           el('div', { style: { height: '14px' } }),
@@ -165,9 +170,12 @@ export default {
           btns(
             button('next token ▸', stepToken),
             runBtn,
-            button('reset', reset, { ghost: true }),
-            button('emoji', () => { state.text = 'ok 🌍 日本語 done'; reset(); }, { ghost: true }),
-            button('plain ascii', () => { state.text = 'the engine reads the weights'; reset(); }, { ghost: true }))),
+            button('reset', reset, { ghost: true })),
+          el('div', { style: { height: '8px' } }),
+          (presetRow = presets([
+            { label: 'emoji', value: 'ok 🌍 日本語 done' },
+            { label: 'plain ascii', value: 'the engine reads the weights' },
+          ].map((p) => ({ ...p, onPick: (v) => { state.text = v; streamBox.set(v); reset(); presetRow.select(v); } })), state.text))),
         el('div', { class: 'col', style: { flex: '0 1 320px' } },
           read,
           el('div', { class: 'sub', style: { margin: '6px 0 4px' }, text: 'what actually goes on the socket' }),

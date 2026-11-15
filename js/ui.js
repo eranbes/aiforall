@@ -78,6 +78,32 @@ export function button(label, onClick, { ghost = false } = {}) {
 }
 export const btns = (...kids) => el('div', { class: 'btns' }, kids.flat(9).filter(Boolean));
 
+/**
+ * A row of mutually exclusive preset buttons that shows which one is active.
+ * Without this, pressing the already-selected preset looks like a dead button.
+ *
+ * items: [{ label, value, onPick }] — onPick runs for the chosen item.
+ * Returns the row, with .select(value) to follow state changed elsewhere.
+ */
+export function presets(items, active = null) {
+  const made = items.map((it) => {
+    const b = button(it.label, () => { row.select(it.value); it.onPick && it.onPick(it.value); });
+    b.dataset.value = String(it.value);
+    return b;
+  });
+  const row = btns(...made);
+  row.select = (value) => {
+    for (const b of made) {
+      const on = b.dataset.value === String(value);
+      b.classList.toggle('ghost', !on);
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  };
+  row.select(active);
+  return row;
+}
+
 export function select({ label, options, value, onChange }) {
   const s = el('select');
   for (const o of options) {

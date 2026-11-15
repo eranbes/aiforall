@@ -1,7 +1,7 @@
 // 20-tools.js — "function calling" is a paragraph of prose and a parser.
 
 import { Plot, color } from '../plot.js';
-import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, textbox, checkbox, fmt } from '../ui.js';
+import { card, el, prose, note, btns, button, row, grow, slider, stats, legend, textbox, checkbox, fmt, presets } from '../ui.js';
 import { probe, tokenize } from '../engine/live.js';
 
 /* The markup this checkpoint's own chat template instructs the model to emit.
@@ -161,10 +161,11 @@ export default {
                 tokens up, competing with everything else in the prompt.`)))));
 
     /* ---------------- 3. the parser, and breaking it ---------------- */
+    let casePresets = null;
     const markup = textbox({
       label: 'what the model emitted (edit it — break it on purpose)',
       rows: 9, value: `I'll check that for you.\n\n${EXAMPLE}`,
-      onInput: () => reparse(),
+      onInput: () => { reparse(); if (casePresets) casePresets.select(null); },
     });
     const parsedBox = el('pre', { class: 'code' });
     const verdict = el('span', { class: 'badge' });
@@ -207,19 +208,25 @@ export default {
         el('span', { text: t }))));
     };
 
+    // The first value is also the textbox's initial content, so the matching
+    // preset starts highlighted rather than the row looking unselected.
+    casePresets = presets([
+      { label: 'valid call', value: `I'll check that for you.\n\n${EXAMPLE}` },
+      { label: 'typo in the tag', value: EXAMPLE.replace('<tool_call>', '<toolcall>') },
+      { label: 'missing required arg', value: EXAMPLE.replace(/<parameter=city>[\s\S]*?<\/parameter>\n/, '') },
+      { label: 'invented tool', value: EXAMPLE.replace('get_weather', 'send_email') },
+      { label: 'prose after the call', value: `${EXAMPLE}\n\nLet me know if you need more!` },
+    ].map((p) => ({ ...p, onPick: (v) => { markup.set(v); casePresets.select(v); reparse(); } })),
+    `I'll check that for you.\n\n${EXAMPLE}`);
 
     root.append(card('The parser is the entire feature',
       'This is a working implementation of the server side, running here. Edit the left pane — misspell <code class="inline">&lt;tool_call&gt;</code>, drop a <code class="inline">&lt;/parameter&gt;</code>, invent a tool, add prose after the call — and watch what your application receives.',
       row(
         grow(markup,
           el('div', { style: { height: '8px' } }),
-          btns(
-            button('parse ▸', reparse),
-            button('valid call', () => { markup.set(`I'll check that.\n\n${EXAMPLE}`); reparse(); }, { ghost: true }),
-            button('typo in the tag', () => { markup.set(EXAMPLE.replace('<tool_call>', '<toolcall>')); reparse(); }, { ghost: true }),
-            button('missing required arg', () => { markup.set(EXAMPLE.replace(/<parameter=city>[\s\S]*?<\/parameter>\n/, '')); reparse(); }, { ghost: true }),
-            button('invented tool', () => { markup.set(EXAMPLE.replace('get_weather', 'send_email')); reparse(); }, { ghost: true }),
-            button('prose after the call', () => { markup.set(`${EXAMPLE}\n\nLet me know if you need more!`); reparse(); }, { ghost: true }))),
+          btns(button('parse ▸', reparse)),
+          el('div', { style: { height: '8px' } }),
+          casePresets),
         el('div', { class: 'col', style: { flex: '1 1 330px' } },
           el('div', { class: 'sub', style: { margin: '0 0 4px' }, text: 'what your HTTP client receives' }),
           parsedBox,
