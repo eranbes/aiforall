@@ -75,9 +75,12 @@ export default {
       const r = await probe();
       T.connected = r.ok;
       if (r.ok && r.models.length) T.model = r.models[0].id;
-      tokErr.textContent = r.ok ? '' : (HOSTED
-        ? 'No engine behind the published copy — a static host cannot run a model. Lesson 18 has the three commands that bring one up locally.'
-        : 'no engine on :8080 — this card needs the live server from lesson 18.');
+      // Written after render, so the router's linkifier has already run —
+      // the cross-reference has to be a real anchor here.
+      const L18 = '<a class="xref" href="#/18-live">lesson 18</a>';
+      tokErr.innerHTML = r.ok ? '' : (HOSTED
+        ? `No engine behind the published copy — a static host cannot run a model. ${L18} has the three commands that bring one up locally.`
+        : `no engine on :8080 — this card needs the live server from ${L18}.`);
       if (r.ok) render();
     };
 
