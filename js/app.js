@@ -50,65 +50,63 @@ for (const l of LESSONS) {
 }
 
 /* ---------- cross-references ---------- */
-// Prose numbers its siblings in three shapes: "lesson 13", "lessons 12–22" and
-// "lessons 05, 06, 17". Rather than hand-write anchors in ~50 places, rewrite
-// the text nodes after each render. Each number becomes its own link.
+// Prose numbers its siblings in several shapes: "lesson 13", "lessons 12–22",
+// "lessons 05, 06, 17" — and the number is often wrapped for emphasis, as in
+// `lesson <b>01</b>`. So matching has to run over the flattened rendered text
+// and then wrap a Range, not a single text node.
 const BY_NUM = new Map(LESSONS.map((l) => [String(l.num).padStart(2, '0'), l]));
-// the whole phrase, including any trailing range/list of further numbers
 const MENTION = /\blessons?\s+\d{2}(?:\s*(?:[–—-]|,\s*(?:and\s+)?)\s*\d{2})*/gi;
-const NUM = /\d{2}/g;
 const SKIP = new Set(['A', 'CODE', 'PRE', 'SCRIPT', 'STYLE', 'TEXTAREA', 'BUTTON', 'CANVAS']);
 
-/** Split one matched phrase into links for each number, plain text between. */
-function renderMention(phrase, selfId) {
-  const parts = [];
-  let cut = 0;
-  let linked = false;
-  NUM.lastIndex = 0;
-  for (let m; (m = NUM.exec(phrase));) {
-    const lesson = BY_NUM.get(m[0]);
-    if (!lesson || lesson.id === selfId) continue; // never link a page to itself
-    // A lone "lesson 13" reads better as one link, word included.
-    const start = linked ? m.index : 0;
-    if (start > cut) parts.push(phrase.slice(cut, start));
-    parts.push(el('a', { class: 'xref', href: '#/' + lesson.id, title: lesson.title },
-      phrase.slice(start, m.index + m[0].length)));
-    cut = m.index + m[0].length;
-    linked = true;
+/** Flatten scope to text, keeping a character → (text node, offset) map. */
+function flatten(scope) {
+  let text = '';
+  const map = []; // one entry per character
+  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    let skip = false;
+    for (let p = n.parentElement; p && p !== scope; p = p.parentElement) {
+      if (SKIP.has(p.tagName)) { skip = true; break; }
+    }
+    for (let i = 0; i < n.nodeValue.length; i++) map.push({ node: n, offset: i, skip });
+    text += n.nodeValue;
   }
-  if (!linked) return null;
-  if (cut < phrase.length) parts.push(phrase.slice(cut));
-  return parts;
+  return { text, map };
 }
 
 function linkLessonMentions(scope, selfId) {
-  const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, {
-    acceptNode(n) {
-      MENTION.lastIndex = 0;
-      if (!MENTION.test(n.nodeValue)) return NodeFilter.FILTER_REJECT;
-      for (let p = n.parentElement; p && p !== scope; p = p.parentElement) {
-        if (SKIP.has(p.tagName)) return NodeFilter.FILTER_REJECT;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  });
-  const targets = [];
-  for (let n = walker.nextNode(); n; n = walker.nextNode()) targets.push(n);
-
-  for (const node of targets) {
-    const frag = document.createDocumentFragment();
-    let last = 0;
-    MENTION.lastIndex = 0;
-    for (let m; (m = MENTION.exec(node.nodeValue));) {
-      const parts = renderMention(m[0], selfId);
-      if (!parts) continue;
-      if (m.index > last) frag.append(node.nodeValue.slice(last, m.index));
-      frag.append(...parts);
-      last = m.index + m[0].length;
+  const { text, map } = flatten(scope);
+  const hits = [];
+  MENTION.lastIndex = 0;
+  for (let m; (m = MENTION.exec(text));) {
+    const lo = m.index, hi = lo + m[0].length;
+    if (map.slice(lo, hi).some((c) => c.skip)) continue; // code, buttons, links
+    // One link per number mentioned; a lone "lesson 13" takes the word too.
+    const nums = [...m[0].matchAll(/\d{2}/g)];
+    let first = true;
+    for (const num of nums) {
+      const lesson = BY_NUM.get(num[0]);
+      if (!lesson || lesson.id === selfId) { first = false; continue; } // never self-link
+      hits.push({
+        lo: first ? lo : lo + num.index,
+        hi: lo + num.index + num[0].length,
+        lesson,
+      });
+      first = false;
     }
-    if (!last) continue;
-    frag.append(node.nodeValue.slice(last));
-    node.replaceWith(frag);
+  }
+
+  // Right to left: wrapping mutates the tree, so earlier offsets stay valid.
+  for (let i = hits.length - 1; i >= 0; i--) {
+    const { lo, hi, lesson } = hits[i];
+    const start = map[lo], end = map[hi - 1];
+    const range = document.createRange();
+    range.setStart(start.node, start.offset);
+    range.setEnd(end.node, end.offset + 1);
+    const a = el('a', { class: 'xref', href: '#/' + lesson.id, title: lesson.title });
+    // extractContents copes with a range that only partly covers <b>01</b>.
+    a.append(range.extractContents());
+    range.insertNode(a);
   }
 }
 
