@@ -499,18 +499,38 @@ export default {
       label: 'training text — edit it and the model is rebuilt from scratch',
       rows: 7, value: DEFAULT_CORPUS,
     });
+    // The visible effect of retraining is ~3000px up the page, so the button
+    // looked dead. Report what the new model is, right here, and offer a jump.
+    const trained = el('div', { class: 'note', style: { display: 'none' } });
+    const seeAbove = button('see it above ↑', () => jumpToCard('Prefill, then the decode loop'), { ghost: true });
+    seeAbove.style.display = 'none';
+
+    const retrain = () => {
+      const text = ta.get() || DEFAULT_CORPUS;
+      const model = new NGram(3).train(text);
+      state.model = model;
+      seedTokens(tokenize(text).slice(0, 4).join(' '));
+      refresh();
+      const words = tokenize(text).length;
+      trained.innerHTML = `<b>Rebuilt from this text.</b> ${words.toLocaleString()} tokens,
+        <b>${model.vocab.length.toLocaleString()}</b> distinct — so every prediction on this page now
+        comes from those ${model.vocab.length.toLocaleString()} words and nothing else. The output and the
+        bars at the top of the page have been reset and now use this model.`;
+      trained.style.display = '';
+      seeAbove.style.display = '';
+    };
+
     root.append(card('The model behind the numbers',
       'A trigram model: it counts which token followed which pair of tokens, and normalises. Primitive — but the probabilities are real, and they came from this text, which you can read in full.',
       row(
         grow(ta,
           el('div', { style: { height: '10px' } }),
           btns(
-            button('retrain', () => {
-              state.model = new NGram(3).train(ta.get() || DEFAULT_CORPUS);
-              seedTokens(tokenize(ta.get()).slice(0, 4).join(' '));
-              refresh();
-            }),
-            button('restore default', () => { ta.set(DEFAULT_CORPUS); }, { ghost: true }))),
+            button('retrain', retrain),
+            seeAbove,
+            button('restore default', () => { ta.set(DEFAULT_CORPUS); retrain(); }, { ghost: true })),
+          el('div', { style: { height: '10px' } }),
+          trained),
         el('div', { class: 'col', style: { flex: '1 1 300px' } },
           note(`<b>Where it fails.</b> It sees two tokens of context. Ask it for a long sentence and it
                 loses the thread immediately — it has no idea what it said five tokens ago.`),
