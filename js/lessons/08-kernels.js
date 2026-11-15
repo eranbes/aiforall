@@ -121,6 +121,9 @@ export default {
       readout.set('running sum', fmtCell(sum));
       readout.set('final answer', state.step >= s.total ? fmtCell(C.get(s.i, s.j)) : '—');
       aPlot.render(); bPlot.render(); cPlot.render();
+      // Grey out the ends: a live button that cannot move reads as broken.
+      back.disabled = state.step <= 0;
+      next.disabled = state.step >= R * N * K;
     }
 
     const back = button('← previous', () => { state.step = Math.max(0, state.step - 1); renderMatmul(); }, { ghost: true });

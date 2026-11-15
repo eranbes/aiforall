@@ -91,6 +91,7 @@ export default {
       layerRead.set('delta norm', k ? fmt.n(norm(deltas[k - 1]), 3) : '—');
       heat.render();
       current.render();
+      syncEnds();
     };
 
     const layerSlider = slider({
@@ -99,16 +100,22 @@ export default {
       onInput: (v) => { streamState.layer = v; renderLayer(); },
     });
 
+    // Hoisted so renderLayer can grey them out at the ends of the range —
+    // an enabled button that does nothing reads as broken.
+    const prevBtn = button('previous', () => { layerSlider.set(Math.max(0, streamState.layer - 1), true); }, { ghost: true });
+    const nextBtn = button('next', () => { layerSlider.set(Math.min(BLOCKS, streamState.layer + 1), true); });
+    const syncEnds = () => {
+      prevBtn.disabled = streamState.layer <= 0;
+      nextBtn.disabled = streamState.layer >= BLOCKS;
+    };
+
     root.append(card('The residual stream',
       'Follow one token (one row vector) through a small stack. The colours are <b>synthetic, deterministic deltas</b> — illustrative of the shape of the computation, not real TensorFold weights.',
       row(
         grow(heat.canvas, current.canvas),
         el('div', { class: 'col', style: { flex: '0 1 310px' } },
           lane, layerSlider, layerRead,
-          btns(
-            button('previous', () => { layerSlider.set(Math.max(0, streamState.layer - 1), true); }, { ghost: true }),
-            button('next', () => { layerSlider.set(Math.min(BLOCKS, streamState.layer + 1), true); }),
-          ),
+          btns(prevBtn, nextBtn),
           note('<b>The invariant:</b> a block does not replace <code class="inline">x</code>. It writes a delta, and the stream continues as <code class="inline">x + Δ</code>. That lets information from the embedding survive all the way to the logits.'),
         ))));
     renderLayer();
